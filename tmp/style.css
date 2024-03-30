@@ -1,0 +1,102 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.1);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background-color: #fff;
+  width: 60vw;
+  height: 60vh;
+  border-radius: 24px;
+}
+
+.row {
+  width: 80%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 12px;
+  padding-bottom: 12px;
+}
+
+.big__font {
+  font-size: 32px;
+  font-weight: 600;
+}
+
+.temp__wrapper {
+}
+.temp__key {
+}
+.temp__value {
+  color: red;
+}
+.humid__wrapper {
+}
+.humid__key {
+}
+.humid__value {
+  color: blue;
+}
+.control__wrapper {
+}
+.control__key {
+}
+.control__value {
+  padding: 8px;
+  margin-top: 4px;
+  border: 2px solid green;
+  text-align: center;
+  border-radius: 12px;
+}
+
+.control__value:hover {
+  background-color: green;
+  color: #fff;
+  cursor: pointer;
+}
+
+.control__value:active {
+  transform: scale(0.98);
+}
+
+.land_humid__wrapper {
+}
+.land_humid__key {
+}
+.land_humid__value {
+}
+.humid_turn_on__wrapper {
+}
+.humid_turn_on__key {
+}
+.humid_turn_on__value {
+}
+.humid_turn_off__wrapper {
+}
+.humid_turn_off__key {
+}
+.humid_turn_off__value {
+}
+
+.slide__wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 12px;
+  margin-top: 8px;
+}
