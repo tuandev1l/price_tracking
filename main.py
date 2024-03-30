@@ -1,10 +1,16 @@
+import logging
 import requests
 import json
 from queue import Queue
 from threading import Thread
 from time import sleep
-import logging
+import pandas as pd
+import re
+import time
 
+# crawl Tiki first
+
+# books
 cookies = {
     '_trackity': '04921f86-8f55-99f4-4fab-e9166040d64c',
     'TOKENS': '{%22access_token%22:%22MDz5J9CVLdmSR8lNqa4utAxsjBYw6o03%22}',
@@ -28,14 +34,16 @@ headers = {
     'x-guest-token': 'MDz5J9CVLdmSR8lNqa4utAxsjBYw6o03',
 }
 
-
 # get all categories
+
 categories_params = {
     'platform': 'desktop',
 }
 
 category_response = requests.get('https://api.tiki.vn/raiden/v2/menu-config',
                                  params=categories_params, cookies=cookies, headers=headers)
+
+# hard code
 
 
 def getMultipleInfoThreeLevel(datas, fields):
@@ -81,26 +89,30 @@ def tryCatchInfo(field, data):
     return None
 
 
-def getInfo(data, jsonRes):
-  jsonRes['original_id'] = tryCatchInfo('id', data)
-  jsonRes['name'] = tryCatchInfo('name', data)
+def getInfo(data):
+  original_id = tryCatchInfo('id', data)
+  name = tryCatchInfo('name', data)
+  price = tryCatchInfo('price', data)
+  original_price = tryCatchInfo('original_price', data)
+  discount = tryCatchInfo('discount', data)
+  discount_rate = tryCatchInfo('discount_rate', data)
+  rating_average = tryCatchInfo('rating_average', data)
+  review_count = tryCatchInfo('review_count', data)
+  review_text = tryCatchInfo('review_text', data)
+  image = tryCatchInfo('images', data)
+  description = tryCatchInfo('description', data)
+  if description:
+    description = re.sub('<.+?>',  '', description, flags=re.A).strip()
+    description = re.sub('\s+',  ' ', description, flags=re.A).strip()
+  return f'{original_id}|{name}|{price}|{original_price}|{discount}|{discount_rate}|{rating_average}|{review_count}|{review_text}|{image}|{description}'
+#   jsonRes['warranty_policy'] = tryCatchInfo('warranty_policy', data)
 #   jsonRes['short_url'] = tryCatchInfo('short_url', data)
 #   jsonRes['short_description'] = tryCatchInfo(
 #       'short_description', data)
-  jsonRes['price'] = tryCatchInfo('price', data)
-  jsonRes['original_price'] = tryCatchInfo('original_price', data)
-  jsonRes['discount'] = tryCatchInfo('discount', data)
-  jsonRes['discount_rate'] = tryCatchInfo('discount_rate', data)
-  jsonRes['rating_average'] = tryCatchInfo('rating_average', data)
-  jsonRes['review_count'] = tryCatchInfo('review_count', data)
-  jsonRes['review_text'] = tryCatchInfo('review_text', data)
 #   jsonRes['thumbnail_url'] = tryCatchInfo('thumbnail_url', data)
 #   jsonRes['day_ago_created'] = tryCatchInfo('day_ago_created', data)
 #   jsonRes['all_time_quantity_sold'] = tryCatchInfo(
 #       'all_time_quantity_sold', data)
-  jsonRes['description'] = tryCatchInfo('description', data)
-#   jsonRes['warranty_policy'] = tryCatchInfo('warranty_policy', data)
-  jsonRes['images'] = tryCatchInfo('images', data)
   # jsonRes['warranty_info'] = tryCatchInfo('warranty_info', data)
   # jsonRes['authors'] = tryCatchInfo(
   #     'authors', replaceIdToOriginalId(data))
@@ -113,8 +125,6 @@ def getInfo(data, jsonRes):
   #     'categories', replaceIdToOriginalId(data))
   # jsonRes['brand'] = tryCatchInfo('brand', replaceIdToOriginalId(data))
 
-  return jsonRes
-
 
 product_params = {
     'platform': 'web',
@@ -125,18 +135,16 @@ product_params = {
 def getDetailProduct(product, category, logger, retry=1):
   global queues
   try:
-    jsonRes = {}
-    jsonRes['category'] = category
-    # jsonRes['seller_name'] = product['seller_name']
-    jsonRes['ecommerce'] = 'TIKI'
+    ecommerce = 'TIKI'
     logger.info('sending request...')
     product_response = requests.get(f'https://tiki.vn/api/v2/products/{product["id"]}',
                                     params=product_params, cookies=cookies, headers=headers)
     data = product_response.json()
     logger.info('Handling info...')
-    getInfo(data, jsonRes)
-    print(jsonRes)
-    # queues.put(jsonRes)
+    infoReturn = getInfo(data)
+    res = f'{ecommerce}|{category}|{infoReturn}'
+    # print(jsonRes)
+    queues.put(res)
     # logging.info(jsonRes)
     logger.info('Done...')
   except Exception as e:
@@ -157,51 +165,63 @@ products_params = {
 
 
 def getListProducts(i, category_id, category, logger):
+  global logging
+
   threads = []
   products_params['page'] = i
   products_params['category'] = category_id
   logger.info('Request list products...')
   products_response = requests.get('https://tiki.vn/api/v2/products',
                                    params=products_params, cookies=cookies, headers=headers)
+  # print(products_response.json())
   products = products_response.json()['data']
-  for product in products:
+  for idx, product in enumerate(products):
     logger.info('Request product...')
+    subLogger = logging.getLogger(f'Thread {i}.{idx}')
     thread = Thread(target=getDetailProduct, args=(
-        product, category, logger))
+        product, category, subLogger))
     thread.start()
     threads.append(thread)
-    sleep(0.5)
-    break
+    sleep(1)
 
   for thread in threads:
     thread.join()
 
 
-# def writeToFile():
-#   global queues, concurrency, logging
+df = pd.read_csv('data.csv', names=['ecommerce', 'category', 'original_id',
+                                    'name',
+                                    'price',
+                                    'original_price',
+                                    'discount',
+                                    'discount_rate',
+                                    'rating_average',
+                                    'review_count',
+                                    'review_text', 'image', 'description'])
 
-#   cnt = 0
-#   data = []
-#   while True:
-#     if not queues.empty():
-#       value = queues.get()
-#       if value == None:
-#         break
-#       cnt += 1
-#       data.append(value)
-#     else:
-#       logging.info(f'Queue: Counting: {cnt}, queue-size: {queues._qsize()}')
-#       sleep(2)
 
-#   jsonData = {'data': data}
-#   with open('data.json', 'w+', encoding='utf-8') as f:
-#     # logging.info(data)
-#     f.write(json.dumps(jsonData))
-#   logging.info('Write to file success...')
+def writeToFile():
+  global queues, concurrency, logging
+
+  cnt = 0
+  while True:
+    if not queues.empty():
+      value = queues.get()
+      if value == None:
+        break
+      cnt += 1
+      df.loc[len(df)] = str(value).split('|')
+    else:
+      logging.info(f'Queue: Counting: {cnt}, queue-size: {queues._qsize()}')
+      sleep(2)
+
+  df.to_csv('data.csv', mode='w+')
+  logging.info('Write to file success...')
 
 
 # get list products
-logging.basicConfig(filename=f'log.txt',
+strings = time.strftime("%Y,%m,%d,%H,%M,%S")
+timeFormat = '_'.join(strings.split(','))
+logging.basicConfig(filename=f'./logs/log_{timeFormat}_.txt',
                     filemode='w+',
                     format='%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s',
                     datefmt='%H:%M:%S',
@@ -222,8 +242,8 @@ response = requests.get(url, headers=headers,
                         cookies=cookies, data=payload).json()
 categories = response['menu_block']['items']
 
-# fileThread = Thread(target=writeToFile)
-# fileThread.start()
+fileThread = Thread(target=writeToFile)
+fileThread.start()
 
 for category in categories:
   category_splitted = category['link'].split('/')
@@ -238,12 +258,10 @@ for category in categories:
         i, category_id, category_name, logger))
     thread.start()
     threads.append(thread)
-    sleep(10)
-    break
+    sleep(20)
 
   for thread in threads:
     thread.join()
-  logging.warning(f'Threads: {threads}')
   queues.put(None)
   logging.info('Done...')
-  break
+  sleep(20)
