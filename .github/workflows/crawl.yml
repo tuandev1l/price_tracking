@@ -11,6 +11,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: List file
+        working-directory: .
+        run: ls -la
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
