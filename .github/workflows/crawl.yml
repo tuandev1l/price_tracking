@@ -16,7 +16,10 @@ jobs:
         with:
           python-version: '3.x'
           cache: 'pip'
-          cache-dependency-path: '**/requirement.txt'
+          cache-dependency-path: |
+            **/requirement.txt
+            **/data/*
+            **/logs/*
       - name: Install dependencies
         run: pip install -r requirement.txt
       - name: Crawling data
