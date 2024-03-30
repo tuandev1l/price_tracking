@@ -18,6 +18,6 @@ jobs:
           cache: 'pip'
           cache-dependency-path: '**/requirement.txt'
       - name: Install dependencies
-        uses: pip install -r requirement.txt
+        run: pip install -r requirement.txt
       - name: Crawling data
         run: python main.py
