@@ -12,33 +12,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python
-        # This is the version of the action for setting up Python, not the Python version.
         uses: actions/setup-python@v4
         with:
-          # Semantic version range syntax or exact version of a Python version
           python-version: '3.x'
-      # You can test your matrix by printing the current Python version
-      - name: chmod
-        run: chmod +x ./test.sh
-      - name: Test crawling data
-        run: ./test.sh
-      # - name: Check out this repo
-      #   uses: actions/checkout@v2
-      # - name: Fetch latest data
-      #   run: |
-      #     chmod +x ./scrape.sh
-      #     ./scrape.sh
-      #     cat ./output/4538233.txt
-      # - name: git diff
-      #   run: |
-      #     git diff
-      # - name: Commit and push if it changed
-      #   run: |
-      #     git config user.name "Automated"
-      #     git config user.email "actions@users.noreply.github.com"
-      #     diff=$(git diff)
-      #     git add -A
-      #     timestamp=$(date -u)
-      #     git commit -m "Latest data: ${timestamp}
-      #     ${diff}" || exit 0
-      #     git push
+          cache: 'pip'
+      - name: Install dependencies
+        run: pip install -r requirement.txt
+      # - name: chmod
+      #   run: chmod +x ./test.sh
+      - name: Crawling data
+        run: python main.py
