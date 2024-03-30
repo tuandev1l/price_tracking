@@ -16,11 +16,8 @@ jobs:
         with:
           python-version: '3.x'
           cache: 'pip'
+          cache-dependency-path: '**/requirement.txt'
       - name: Install dependencies
-        uses: py-actions/py-dependency-install@v4
-        with:
-          path: 'requirement.txt'
-      # - name: chmod
-      #   run: chmod +x ./test.sh
+        uses: pip install -r requirement.txt
       - name: Crawling data
         run: python main.py
