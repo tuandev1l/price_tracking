@@ -18,8 +18,10 @@ jobs:
           # Semantic version range syntax or exact version of a Python version
           python-version: '3.x'
       # You can test your matrix by printing the current Python version
-      - name: Display Python version
-        run: python -c "import sys; print(sys.version)"
+      - name: chmod
+        run: chmod +x ./test.sh
+      - name: Test crawling data
+        run: ./test.sh
       # - name: Check out this repo
       #   uses: actions/checkout@v2
       # - name: Fetch latest data
