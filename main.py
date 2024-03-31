@@ -188,7 +188,7 @@ def getListProducts(i, category_id, category):
     thread.start()
     threads.append(thread)
     # break
-    sleep(0.5)
+    sleep(2)
 
   for thread in threads:
     thread.join()
@@ -230,6 +230,26 @@ def writeToFile():
   df.to_csv(f'./data/{fileName}.csv', mode='w+')
   logging.info('Write to file success...')
 
+# %%
+
+
+def crawlMultipleCategories(category):
+  global threads
+
+  category_splitted = category['link'].split('/')
+  category_id = category_splitted[-1][1:]
+  category_name = category_splitted[-2]
+
+  # print(category_id, category_name)
+
+  for i in range(1, (2000//LIMIT)+1):
+    thread = Thread(target=getListProducts, args=(
+        i, category_id, category_name))
+    thread.start()
+    threads.append(thread)
+    # break
+    sleep(10)
+
 
 # %%
 capacity = 1000000
@@ -252,22 +272,11 @@ fileThread = Thread(target=writeToFile)
 fileThread.start()
 
 for category in categories:
-  category_splitted = category['link'].split('/')
-  category_id = category_splitted[-1][1:]
-  category_name = category_splitted[-2]
-
-  # print(category_id, category_name)
-
-  for i in range(1, (2000//LIMIT)+1):
-    thread = Thread(target=getListProducts, args=(
-        i, category_id, category_name))
-    thread.start()
-    threads.append(thread)
-    # break
-    sleep(10)
-
+  thread = Thread(target=crawlMultipleCategories, args=(category,))
+  threads.append(thread)
+  thread.start()
   # break
-  sleep(10)
+  sleep(30)
 for thread in threads:
   thread.join()
 queues.put(None)
