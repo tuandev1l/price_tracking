@@ -27,5 +27,5 @@ jobs:
         run: pip install -r requirement.txt
       - name: Crawling data
         run: python main.py
-      - name: Commit change
-        run:
+      # - name: Commit change
+      #   run:
