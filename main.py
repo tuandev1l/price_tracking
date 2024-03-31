@@ -217,6 +217,7 @@ def getListProducts(i, category_id, category, retry=1):
     if retry >= 3:
       return
     sleep(10)
+    logger.warn('Retry request products')
     return getListProducts(i, category_id, category, retry+1)
 
 
