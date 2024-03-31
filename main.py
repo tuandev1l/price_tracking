@@ -188,7 +188,7 @@ def getListProducts(i, category_id, category):
     thread.start()
     threads.append(thread)
     # break
-    sleep(5)
+    sleep(20)
 
   for thread in threads:
     thread.join()
