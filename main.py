@@ -114,57 +114,61 @@ def tryCatchInfo(field, data):
 # %%
 
 
-def getInfo(data):
+def getInfo(data, logger, category):
+  global queues
+
+  logger.info('Handling data...')
   original_id = tryCatchInfo('id', data)
   name = tryCatchInfo('name', data)
   price = tryCatchInfo('price', data)
   original_price = tryCatchInfo('original_price', data)
   discount = tryCatchInfo('discount', data)
   discount_rate = tryCatchInfo('discount_rate', data)
-  rating_average = tryCatchInfo('rating_average', data)
-  review_count = tryCatchInfo('review_count', data)
-  review_text = tryCatchInfo('review_text', data)
-  image = tryCatchInfo('images', data)
-  description = tryCatchInfo('description', data)
-  if description:
-    description = re.sub('<.+?>',  '', description, flags=re.A).strip()
-    description = re.sub('\s+',  ' ', description, flags=re.A).strip()
-  return f'{original_id}|{name}|{price}|{original_price}|{discount}|{discount_rate}|{rating_average}|{review_count}|{review_text}|{image}|{description}'
-
-
-# %%
-product_params = {
-    'platform': 'web',
-    'version': '3',
-}
-
-
-def getDetailProduct(product, category, logger, retry=1):
-  global queues
-  try:
-    ecommerce = 'TIKI'
-    logger.info('sending detail product request...')
-    product_response = requests.get(f'https://tiki.vn/api/v2/products/{product["id"]}',
-                                    params=product_params, cookies=cookies, headers=headers)
-    data = product_response.json()
-    logger.info('Handling info...')
-    infoReturn = getInfo(data)
-    res = f'{ecommerce}|{category}|{infoReturn}'
-    # print(jsonRes)
-    queues.put(res)
-    # logging.info(jsonRes)
-    logger.info('Done...')
-  except Exception as e:
-    # logger.error(e)
-    if retry >= 3:
-      return
-    sleep(random.randint(30, 60))
-    logger.warning('Retry request detail product')
-    return getDetailProduct(product, logger, retry+1)
-
+  # rating_average = tryCatchInfo('rating_average', data)
+  # review_count = tryCatchInfo('review_count', data)
+  # review_text = tryCatchInfo('review_text', data)
+  # image = tryCatchInfo('images', data)
+  # description = tryCatchInfo('description', data)
+  # if description:
+  #   description = re.sub('<.+?>',  '', description, flags=re.A).strip()
+  #   description = re.sub('\s+',  ' ', description, flags=re.A).strip()
+  # return f'{original_id},{name},{price},{original_price},{discount},{discount_rate},{rating_average},{review_count},{review_text},{image},{description}'
+  logger.info('Return data...')
+  queues.put(
+      f'TIKI,{category},{original_id},"{name}",{price},{original_price},{discount},{discount_rate}')
 
 # %%
-LIMIT = 20
+# product_params = {
+#     'platform': 'web',
+#     'version': '3',
+# }
+
+
+# def getDetailProduct(product, category, logger, retry=1):
+#   global queues
+#   try:
+#     ecommerce = 'TIKI'
+#     logger.info('sending detail product request...')
+#     product_response = requests.get(f'https://tiki.vn/api/v2/products/{product["id"]}',
+#                                     params=product_params, cookies=cookies, headers=headers)
+#     data = product_response.json()
+#     logger.info('Handling info...')
+#     infoReturn = getInfo(data)
+#     # res = f'{ecommerce},{category},{infoReturn}'
+#     # print(jsonRes)
+#     # queues.put(res)
+#     # logging.info(jsonRes)
+#     logger.info('Done...')
+#   except Exception as e:
+#     # logger.error(e)
+#     if retry >= 3:
+#       return
+#     sleep(random.randint(30, 60))
+#     logger.warning('Retry request detail product')
+#     return getDetailProduct(product, logger, retry+1)
+
+# %%
+LIMIT = 40
 
 products_params = {
     'limit': LIMIT,
@@ -174,42 +178,46 @@ products_params = {
 }
 
 
-def getListProducts(i, category_id, category):
+def getListProducts(i, category_id, category, retry=1):
+  try:
+    logger = getLogging(f'Thread {i}-{category}')
 
-  logger = getLogging(f'Thread {i}-{category}')
+    threads = []
+    products_params['page'] = i
+    products_params['category'] = category_id
+    logger.info('Request list products...')
+    products_response = requests.get('https://tiki.vn/api/v2/products',
+                                     params=products_params, cookies=cookies, headers=headers)
+    # print(products_response.json())
+    products = products_response.json()['data']
+    logger.info('DONE request list products...')
+    for idx, product in enumerate(products):
+      subLogger = getLogging(f'Thread {i}.{idx}-{category}')
+      thread = Thread(target=getInfo, args=(product, subLogger, category))
+      threads.append(thread)
+      thread.start()
 
-  threads = []
-  products_params['page'] = i
-  products_params['category'] = category_id
-  logger.info('Request list products...')
-  products_response = requests.get('https://tiki.vn/api/v2/products',
-                                   params=products_params, cookies=cookies, headers=headers)
-  # print(products_response.json())
-  products = products_response.json()['data']
-  logger.info('DONE request list products...')
-  for idx, product in enumerate(products):
-    subLogger = getLogging(f'Thread {i}.{idx}-{category}')
-    thread = Thread(target=getDetailProduct, args=(
-        product, category, subLogger))
-    thread.start()
-    threads.append(thread)
-    # break
-    sleep(random.randint(40, 70))
+      # handle detail product
+      # thread = Thread(target=getDetailProduct, args=(
+      #     product, category, subLogger))
+      # thread.start()
+      # threads.append(thread)
+      # break
+      # sleep(random.randint(40, 70))
 
-  for thread in threads:
-    thread.join()
+    for thread in threads:
+      thread.join()
+  except:
+    if retry >= 3:
+      return
+    sleep(10)
+    return getListProducts(i, category_id, category, retry+1)
 
 
 # %%
-df = pd.read_csv('./data/data.csv', names=['ecommerce', 'category', 'original_id',
-                                           'name',
-                                           'price',
-                                           'original_price',
-                                           'discount',
-                                           'discount_rate',
-                                           'rating_average',
-                                           'review_count',
-                                           'review_text', 'image', 'description'])
+columns = ['ecommerce', 'category', 'original_id', 'name', 'price',
+           'original_price', 'discount', 'discount_rate']
+# df = pd.read_csv('./data/data.csv', names=[])
 
 
 def writeToFile():
@@ -218,6 +226,9 @@ def writeToFile():
   logger = getLogging('FILE')
   fileName = datetime.now().strftime('%Y_%m_%d_%H_%M_%S')
 
+  f = open(f'./data/{fileName}.csv', 'w+')
+  f.write(','.join(columns)+'\n')
+
   cnt = 0
   while True:
     if not queues.empty():
@@ -225,17 +236,19 @@ def writeToFile():
       if value == None:
         break
       cnt += 1
-      try:
-        df.loc[len(df)] = str(value).split('|')
-      except Exception as e:
-        logger.error(e)
-        logger.error(f'VALUE RECEIVE: {value}')
+      f.write(f'{value}\n')
+      # try:
+      #   pd.concat(value, df, axis=1, ignore_index=True)
+      # except Exception as e:
+      #   logger.error(e)
+      #   logger.error(f'VALUE RECEIVE: {value}')
     else:
       logger.info(f'Queue: Counting: {cnt}, queue-size: {queues._qsize()}')
-      sleep(60)
+      sleep(10)
 
-  df.to_csv(f'./data/{fileName}.csv', mode='w+')
-  logging.info('Write to file success...')
+  # df.to_csv(f'./data/{fileName}.csv', mode='w+')
+  f.close()
+  logger.info('Write to file success...')
 
 # %%
 
@@ -255,7 +268,7 @@ def crawlMultipleCategories(category):
     thread.start()
     threads.append(thread)
     # break
-    sleep(random.randint(10, 25))
+    sleep(random.randint(5, 10))
 
 
 # %%
@@ -283,7 +296,7 @@ for category in categories:
   threads.append(thread)
   thread.start()
   # break
-  sleep(random.randint(10, 30))
+  sleep(random.randint(10, 20))
 for thread in threads:
   thread.join()
 queues.put(None)
