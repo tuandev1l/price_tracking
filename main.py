@@ -1,4 +1,4 @@
-import logging
+# %%
 import requests
 import json
 from queue import Queue
@@ -7,10 +7,11 @@ from time import sleep
 import pandas as pd
 import re
 import time
+import logging
+import coloredlogs
+from datetime import datetime
 
-# crawl Tiki first
-
-# books
+# %%
 cookies = {
     '_trackity': '04921f86-8f55-99f4-4fab-e9166040d64c',
     'TOKENS': '{%22access_token%22:%22MDz5J9CVLdmSR8lNqa4utAxsjBYw6o03%22}',
@@ -34,7 +35,18 @@ headers = {
     'x-guest-token': 'MDz5J9CVLdmSR8lNqa4utAxsjBYw6o03',
 }
 
+# %%
+
+
+def getLogging(threadName):
+  logger = logging.getLogger(threadName)
+  coloredlogs.install(level='INFO', logger=logger, isatty=True,
+                      fmt='%(asctime)s,%(msecs)03d %(hostname)s %(name)s %(levelname)s %(message)s')
+  return logger
+
+# %%
 # get all categories
+
 
 categories_params = {
     'platform': 'desktop',
@@ -43,6 +55,7 @@ categories_params = {
 category_response = requests.get('https://api.tiki.vn/raiden/v2/menu-config',
                                  params=categories_params, cookies=cookies, headers=headers)
 
+# %%
 # hard code
 
 
@@ -61,6 +74,8 @@ def getMultipleInfoThreeLevel(datas, fields):
     jsonDatas.append(jsonData)
   return jsonDatas
 
+# %%
+
 
 def getMultipleInfo(datas, fields):
   res = []
@@ -74,9 +89,13 @@ def getMultipleInfo(datas, fields):
     res.append(jsonData)
   return res
 
+# %%
+
 
 def replaceIdToOriginalId(data):
-  return json.loads(json.dumps(data).replace('"id":', '"original-id":'))
+  return json.loads(json.dumps(data).replace('"id":', '"original_id":'))
+
+# %%
 
 
 def tryCatchInfo(field, data):
@@ -87,6 +106,8 @@ def tryCatchInfo(field, data):
   except:
     print(f'Error when get {field}')
     return None
+
+# %%
 
 
 def getInfo(data):
@@ -105,27 +126,9 @@ def getInfo(data):
     description = re.sub('<.+?>',  '', description, flags=re.A).strip()
     description = re.sub('\s+',  ' ', description, flags=re.A).strip()
   return f'{original_id}|{name}|{price}|{original_price}|{discount}|{discount_rate}|{rating_average}|{review_count}|{review_text}|{image}|{description}'
-#   jsonRes['warranty_policy'] = tryCatchInfo('warranty_policy', data)
-#   jsonRes['short_url'] = tryCatchInfo('short_url', data)
-#   jsonRes['short_description'] = tryCatchInfo(
-#       'short_description', data)
-#   jsonRes['thumbnail_url'] = tryCatchInfo('thumbnail_url', data)
-#   jsonRes['day_ago_created'] = tryCatchInfo('day_ago_created', data)
-#   jsonRes['all_time_quantity_sold'] = tryCatchInfo(
-#       'all_time_quantity_sold', data)
-  # jsonRes['warranty_info'] = tryCatchInfo('warranty_info', data)
-  # jsonRes['authors'] = tryCatchInfo(
-  #     'authors', replaceIdToOriginalId(data))
-  # jsonRes['specifications'] = tryCatchInfo('specifications', data)
-  # jsonRes['configurable_options'] = tryCatchInfo(
-  #     'configurable_options', data)
-  # jsonRes['highlight'] = tryCatchInfo('highlight', data)
-  # jsonRes['quantity_sold'] = tryCatchInfo('quantity_sold', data)
-  # jsonRes['categories'] = tryCatchInfo(
-  #     'categories', replaceIdToOriginalId(data))
-  # jsonRes['brand'] = tryCatchInfo('brand', replaceIdToOriginalId(data))
 
 
+# %%
 product_params = {
     'platform': 'web',
     'version': '3',
@@ -136,24 +139,25 @@ def getDetailProduct(product, category, logger, retry=1):
   global queues
   try:
     ecommerce = 'TIKI'
-    print('sending request...')
+    logger.info('sending detail product request...')
     product_response = requests.get(f'https://tiki.vn/api/v2/products/{product["id"]}',
                                     params=product_params, cookies=cookies, headers=headers)
     data = product_response.json()
-    print('Handling info...')
+    logger.info('Handling info...')
     infoReturn = getInfo(data)
     res = f'{ecommerce}|{category}|{infoReturn}'
     # print(jsonRes)
     queues.put(res)
-    # print(jsonRes)
-    print('Done...')
+    # logging.info(jsonRes)
+    logger.info('Done...')
   except Exception as e:
-    print(e)
+    logger.error(e)
     if retry >= 1:
       return
     return getDetailProduct(product, logger, retry+1)
 
 
+# %%
 LIMIT = 20
 
 products_params = {
@@ -165,29 +169,32 @@ products_params = {
 
 
 def getListProducts(i, category_id, category):
-  global logging
+
+  logger = getLogging(f'Thread {i}')
 
   threads = []
   products_params['page'] = i
   products_params['category'] = category_id
-  print('Request list products...')
+  logger.info('Request list products...')
   products_response = requests.get('https://tiki.vn/api/v2/products',
                                    params=products_params, cookies=cookies, headers=headers)
   # print(products_response.json())
   products = products_response.json()['data']
   for idx, product in enumerate(products):
-    print('Request product...')
-    # subLogger = logging.getLogger(f'Thread {i}.{idx}')
+    logger.info('Request detail product...')
+    subLogger = getLogging(f'Thread {i}.{idx}')
     thread = Thread(target=getDetailProduct, args=(
-        product, category))
+        product, category, subLogger))
     thread.start()
     threads.append(thread)
+    # break
     sleep(1)
 
   for thread in threads:
     thread.join()
 
 
+# %%
 df = pd.read_csv('data.csv', names=['ecommerce', 'category', 'original_id',
                                     'name',
                                     'price',
@@ -200,7 +207,10 @@ df = pd.read_csv('data.csv', names=['ecommerce', 'category', 'original_id',
 
 
 def writeToFile():
-  global queues, concurrency, logging
+  global queues, concurrency
+
+  logger = getLogging('FILE')
+  fileName = datetime.now().strftime('%Y_%m_%d_%H_%M_%S')
 
   cnt = 0
   while True:
@@ -211,26 +221,21 @@ def writeToFile():
       cnt += 1
       try:
         df.loc[len(df)] = str(value).split('|')
-      except:
-        print(f'Error here: {value}')
+      except Exception as e:
+        logger.error(e)
     else:
-      print(f'Queue: Counting: {cnt}, queue-size: {queues._qsize()}')
+      logger.info(f'Queue: Counting: {cnt}, queue-size: {queues._qsize()}')
       sleep(2)
 
-  df.to_csv('data.csv', mode='w+')
-  print('Write to file success...')
+  df.to_csv(f'./data/{fileName}.csv', mode='w+')
+  logging.info('Write to file success...')
 
 
+# %%
 # get list products
-strings = time.strftime("%Y,%m,%d,%H,%M,%S")
-timeFormat = '_'.join(strings.split(','))
-logging.basicConfig(filename=f'./logs/log_{timeFormat}_.txt',
-                    filemode='w+',
-                    format='%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s',
-                    datefmt='%H:%M:%S',
-                    level=print)
-
-
+# logging.basicConfig(format='%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s',
+#                     datefmt='%H:%M:%S',
+#                     level=logging.INFO)
 capacity = 1000000
 totalRows = 0
 threads = []
@@ -241,10 +246,12 @@ url = "https://api.tiki.vn/raiden/v2/menu-config?platform=desktop"
 
 payload = {}
 
+logger = getLogging('ROOT')
+logger.info('Request all categories...')
 response = requests.get(url, headers=headers,
                         cookies=cookies, data=payload).json()
 categories = response['menu_block']['items']
-
+logger.info('DONE Request categories...')
 fileThread = Thread(target=writeToFile)
 fileThread.start()
 
@@ -256,22 +263,16 @@ for category in categories:
   # print(category_id, category_name)
 
   for i in range(1, (2000//LIMIT)+1):
-    # logger = logging.getLogger(f'Thread {i}')
     thread = Thread(target=getListProducts, args=(
         i, category_id, category_name))
     thread.start()
     threads.append(thread)
+    # break
     sleep(20)
 
   for thread in threads:
     thread.join()
   queues.put(None)
-  print('Done...')
+  logger.info('Done...')
+  # break
   sleep(20)
-
-  '''
-  TODO:
-    - write custom logging function to handle
-    - commit file change in github action
-
-  '''
