@@ -211,10 +211,13 @@ def getListProducts(i, category_id, category, retry=1):
       # break
       # sleep(random.randint(40, 70))
 
+    logger.info(f'Before join {threads}')
     for thread in threads:
       thread.join()
+    logger.info(f'After join {threads}')
   except:
     if retry >= 3:
+      logger.error('Can not request products')
       return
     sleep(10)
     logger.warn('Retry request products')
@@ -276,7 +279,7 @@ def crawlMultipleCategories(category):
     thread.start()
     threads.append(thread)
     # break
-    sleep(0.5)
+    sleep(1)
     # sleep(random.randint(5, 10))
   logger.info(f'Before join: {threads}')
   for thread in threads:
