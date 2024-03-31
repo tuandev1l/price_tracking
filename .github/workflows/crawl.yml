@@ -22,6 +22,11 @@ jobs:
             **/requirement.txt
             **/data/*
             **/logs/*
+      - name: Pull request
+        uses: EndBug/add-and-commit@v9
+        with:
+          pull: '--rebase'
+          push: false
       - name: Install dependencies
         run: pip install -r requirement.txt
       - name: Crawling data
@@ -29,5 +34,4 @@ jobs:
       - name: Commit change
         uses: EndBug/add-and-commit@v9
         with:
-          pull: '--rebase'
           message: 'crawling data'
