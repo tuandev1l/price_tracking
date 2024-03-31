@@ -188,7 +188,7 @@ def getListProducts(i, category_id, category):
     thread.start()
     threads.append(thread)
     # break
-    sleep(2)
+    sleep(5)
 
   for thread in threads:
     thread.join()
@@ -248,7 +248,7 @@ def crawlMultipleCategories(category):
     thread.start()
     threads.append(thread)
     # break
-    sleep(10)
+    sleep(30)
 
 
 # %%
@@ -276,7 +276,7 @@ for category in categories:
   threads.append(thread)
   thread.start()
   # break
-  sleep(30)
+  sleep(60)
 for thread in threads:
   thread.join()
 queues.put(None)
