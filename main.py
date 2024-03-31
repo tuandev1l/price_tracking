@@ -184,7 +184,7 @@ products_params = {
 
 
 def getListProducts(i, category_id, category, retry=1):
-  global threads
+  threads = []
 
   try:
     logger = getLogging(f'Thread {i}-{category}')
@@ -211,8 +211,8 @@ def getListProducts(i, category_id, category, retry=1):
       # break
       # sleep(random.randint(40, 70))
 
-    # for thread in threads:
-    #   thread.join()
+    for thread in threads:
+      thread.join()
   except:
     if retry >= 3:
       return
@@ -260,8 +260,9 @@ def writeToFile():
 
 
 def crawlMultipleCategories(category):
-  global threads
+  threads = []
 
+  logger = logging.getLogger(f'{category}')
   category_splitted = category['link'].split('/')
   category_id = category_splitted[-1][1:]
   category_name = category_splitted[-2]
@@ -276,8 +277,10 @@ def crawlMultipleCategories(category):
     # break
     sleep(0.5)
     # sleep(random.randint(5, 10))
-  # for thread in threads:
-  #   thread.join()
+  logger.info(f'Before join: {threads}')
+  for thread in threads:
+    thread.join()
+  logger.info(f'After join: {threads}')
 
 
 # %%
@@ -300,9 +303,12 @@ for category in categories:
   threads.append(thread)
   thread.start()
   # break
-  sleep(15)
+  sleep(10)
   # sleep(random.randint(10, 20))
+logger.info(f'Before join: {threads}')
 for thread in threads:
   thread.join()
+logger.info(f'After join: {threads}')
+sleep(10*60)
 queues.put(None)
 logger.info('Done...')
