@@ -6,10 +6,12 @@ from threading import Thread
 from time import sleep
 import pandas as pd
 import re
-import time
 import logging
 import coloredlogs
 from datetime import datetime
+import sys
+
+sys.tracebacklimit = 0
 
 # %%
 cookies = {
@@ -152,8 +154,10 @@ def getDetailProduct(product, category, logger, retry=1):
     logger.info('Done...')
   except Exception as e:
     logger.error(e)
-    if retry >= 1:
+    if retry >= 3:
       return
+    sleep(30)
+    logger.warning('Retry request detail product')
     return getDetailProduct(product, logger, retry+1)
 
 
