@@ -268,7 +268,8 @@ def crawlMultipleCategories(category):
     thread.start()
     threads.append(thread)
     # break
-    sleep(random.randint(5, 10))
+    sleep(0.5)
+    # sleep(random.randint(5, 10))
 
 
 # %%
@@ -296,7 +297,8 @@ for category in categories:
   threads.append(thread)
   thread.start()
   # break
-  sleep(random.randint(10, 20))
+  sleep(5)
+  # sleep(random.randint(10, 20))
 for thread in threads:
   thread.join()
 queues.put(None)
