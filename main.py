@@ -187,23 +187,23 @@ def getListProducts(i, category_id, category):
         product, category, subLogger))
     thread.start()
     threads.append(thread)
-    break
-    # sleep(0.5)
+    # break
+    sleep(0.5)
 
   for thread in threads:
     thread.join()
 
 
 # %%
-df = pd.read_csv('data.csv', names=['ecommerce', 'category', 'original_id',
-                                    'name',
-                                    'price',
-                                    'original_price',
-                                    'discount',
-                                    'discount_rate',
-                                    'rating_average',
-                                    'review_count',
-                                    'review_text', 'image', 'description'])
+df = pd.read_csv('./data/data.csv', names=['ecommerce', 'category', 'original_id',
+                                           'name',
+                                           'price',
+                                           'original_price',
+                                           'discount',
+                                           'discount_rate',
+                                           'rating_average',
+                                           'review_count',
+                                           'review_text', 'image', 'description'])
 
 
 def writeToFile():
@@ -225,7 +225,7 @@ def writeToFile():
         logger.error(e)
     else:
       logger.info(f'Queue: Counting: {cnt}, queue-size: {queues._qsize()}')
-      sleep(5)
+      sleep(60)
 
   df.to_csv(f'./data/{fileName}.csv', mode='w+')
   logging.info('Write to file success...')
@@ -263,11 +263,11 @@ for category in categories:
         i, category_id, category_name))
     thread.start()
     threads.append(thread)
-    break
-    # sleep(10)
+    # break
+    sleep(10)
 
-  break
-  # sleep(10)
+  # break
+  sleep(10)
 for thread in threads:
   thread.join()
 queues.put(None)
