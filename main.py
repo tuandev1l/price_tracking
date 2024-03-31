@@ -12,7 +12,7 @@ from datetime import datetime
 import sys
 import random
 
-sys.tracebacklimit = None
+sys.tracebacklimit = 0
 
 # %%
 cookies = {
@@ -193,7 +193,7 @@ def getListProducts(i, category_id, category):
     thread.start()
     threads.append(thread)
     # break
-    sleep(random.randint(5, 30))
+    sleep(random.randint(5, 20))
 
   for thread in threads:
     thread.join()
@@ -253,7 +253,7 @@ def crawlMultipleCategories(category):
     thread.start()
     threads.append(thread)
     # break
-    sleep(random.randint(20, 30))
+    sleep(random.randint(10, 25))
 
 
 # %%
