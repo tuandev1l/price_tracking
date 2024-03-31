@@ -13,6 +13,7 @@ import sys
 import random
 
 sys.tracebacklimit = 0
+logging.raiseExceptions = False
 
 # %%
 cookies = {
