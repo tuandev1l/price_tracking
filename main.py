@@ -41,7 +41,7 @@ headers = {
 def getLogging(threadName):
   logger = logging.getLogger(threadName)
   coloredlogs.install(level='INFO', logger=logger, isatty=True,
-                      fmt='%(asctime)s,%(msecs)03d %(hostname)s %(name)s %(levelname)s %(message)s')
+                      fmt='%(asctime)s,%(msecs)03d %(name)s %(levelname)s %(message)s')
   return logger
 
 # %%
@@ -170,7 +170,7 @@ products_params = {
 
 def getListProducts(i, category_id, category):
 
-  logger = getLogging(f'Thread {i}')
+  logger = getLogging(f'Thread {i}-{category}')
 
   threads = []
   products_params['page'] = i
@@ -180,15 +180,15 @@ def getListProducts(i, category_id, category):
                                    params=products_params, cookies=cookies, headers=headers)
   # print(products_response.json())
   products = products_response.json()['data']
+  logger.info('DONE request list products...')
   for idx, product in enumerate(products):
-    logger.info('Request detail product...')
-    subLogger = getLogging(f'Thread {i}.{idx}')
+    subLogger = getLogging(f'Thread {i}.{idx}-{category}')
     thread = Thread(target=getDetailProduct, args=(
         product, category, subLogger))
     thread.start()
     threads.append(thread)
-    # break
-    sleep(1)
+    break
+    # sleep(0.5)
 
   for thread in threads:
     thread.join()
@@ -225,17 +225,13 @@ def writeToFile():
         logger.error(e)
     else:
       logger.info(f'Queue: Counting: {cnt}, queue-size: {queues._qsize()}')
-      sleep(2)
+      sleep(5)
 
   df.to_csv(f'./data/{fileName}.csv', mode='w+')
   logging.info('Write to file success...')
 
 
 # %%
-# get list products
-# logging.basicConfig(format='%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s',
-#                     datefmt='%H:%M:%S',
-#                     level=logging.INFO)
 capacity = 1000000
 totalRows = 0
 threads = []
@@ -267,12 +263,12 @@ for category in categories:
         i, category_id, category_name))
     thread.start()
     threads.append(thread)
-    # break
-    sleep(20)
+    break
+    # sleep(10)
 
-  for thread in threads:
-    thread.join()
-  queues.put(None)
-  logger.info('Done...')
-  # break
-  sleep(20)
+  break
+  # sleep(10)
+for thread in threads:
+  thread.join()
+queues.put(None)
+logger.info('Done...')
