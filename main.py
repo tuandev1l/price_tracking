@@ -304,7 +304,7 @@ for category in categories:
   threads.append(thread)
   thread.start()
   # break
-  sleep(10)
+  sleep(40)
   # sleep(random.randint(10, 20))
 logger.info(f'Before join: {threads}')
 for thread in threads:
