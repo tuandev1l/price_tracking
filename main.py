@@ -234,7 +234,7 @@ def writeToFile():
   global queues, concurrency
 
   logger = getLogging('FILE')
-  fileName = datetime.now().strftime('%Y_%m_%d_%H_%M_%S')
+  fileName = datetime.now().astimezone().strftime('%Y_%m_%d_%H_%M_%S')
 
   f = open(f'./data/{fileName}.csv', 'w+')
   f.write(','.join(columns)+'\n')
@@ -281,10 +281,10 @@ def crawlMultipleCategories(category):
     # break
     sleep(1)
     # sleep(random.randint(5, 10))
-  logger.info(f'Before join: {threads}')
+  # logger.info(f'Before join: {threads}')
   for thread in threads:
     thread.join()
-  logger.info(f'After join: {threads}')
+  # logger.info(f'After join: {threads}')
 
 
 # %%
@@ -307,7 +307,7 @@ for category in categories:
   threads.append(thread)
   thread.start()
   # break
-  sleep(20)
+  sleep(60)
   # sleep(random.randint(10, 20))
 # logger.info(f'Before join: {threads}')
 for thread in threads:
