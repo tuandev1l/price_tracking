@@ -39,6 +39,11 @@ headers = {
     'x-guest-token': 'MDz5J9CVLdmSR8lNqa4utAxsjBYw6o03',
 }
 
+capacity = 1000000
+totalRows = 0
+threads = []
+queues = Queue(capacity)
+
 # %%
 
 
@@ -179,10 +184,11 @@ products_params = {
 
 
 def getListProducts(i, category_id, category, retry=1):
+  global threads
+
   try:
     logger = getLogging(f'Thread {i}-{category}')
 
-    threads = []
     products_params['page'] = i
     products_params['category'] = category_id
     logger.info('Request list products...')
@@ -205,8 +211,8 @@ def getListProducts(i, category_id, category, retry=1):
       # break
       # sleep(random.randint(40, 70))
 
-    for thread in threads:
-      thread.join()
+    # for thread in threads:
+    #   thread.join()
   except:
     if retry >= 3:
       return
@@ -270,14 +276,11 @@ def crawlMultipleCategories(category):
     # break
     sleep(0.5)
     # sleep(random.randint(5, 10))
+  # for thread in threads:
+  #   thread.join()
 
 
 # %%
-capacity = 1000000
-totalRows = 0
-threads = []
-queues = Queue(capacity)
-
 # get categories
 url = "https://api.tiki.vn/raiden/v2/menu-config?platform=desktop"
 
@@ -297,7 +300,7 @@ for category in categories:
   threads.append(thread)
   thread.start()
   # break
-  sleep(5)
+  sleep(15)
   # sleep(random.randint(10, 20))
 for thread in threads:
   thread.join()
