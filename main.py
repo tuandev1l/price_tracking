@@ -232,7 +232,7 @@ def writeToFile():
         logger.error(f'VALUE RECEIVE: {value}')
     else:
       logger.info(f'Queue: Counting: {cnt}, queue-size: {queues._qsize()}')
-      sleep(60)
+      sleep(20)
 
   df.to_csv(f'./data/{fileName}.csv', mode='w+')
   logging.info('Write to file success...')
