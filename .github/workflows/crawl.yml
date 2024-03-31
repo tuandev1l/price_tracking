@@ -1,6 +1,7 @@
 name: Scrape latest data
 
 on:
+  push:
   schedule:
     - cron: '0 * * * *'
 
@@ -28,4 +29,5 @@ jobs:
       - name: Commit change
         uses: EndBug/add-and-commit@v9
         with:
+          pull: '--rebase'
           message: 'crawling data'

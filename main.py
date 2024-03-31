@@ -193,8 +193,8 @@ def getListProducts(i, category_id, category):
         product, category, subLogger))
     thread.start()
     threads.append(thread)
-    # break
-    sleep(random.randint(40, 70))
+    break
+    # sleep(random.randint(40, 70))
 
   for thread in threads:
     thread.join()
@@ -254,8 +254,8 @@ def crawlMultipleCategories(category):
         i, category_id, category_name))
     thread.start()
     threads.append(thread)
-    # break
-    sleep(random.randint(10, 25))
+    break
+    # sleep(random.randint(10, 25))
 
 
 # %%
@@ -282,8 +282,8 @@ for category in categories:
   thread = Thread(target=crawlMultipleCategories, args=(category,))
   threads.append(thread)
   thread.start()
-  # break
-  sleep(random.randint(10, 30))
+  break
+  # sleep(random.randint(10, 30))
 for thread in threads:
   thread.join()
 queues.put(None)
