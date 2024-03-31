@@ -154,7 +154,7 @@ def getDetailProduct(product, category, logger, retry=1):
     # logging.info(jsonRes)
     logger.info('Done...')
   except Exception as e:
-    logger.error(e)
+    # logger.error(e)
     if retry >= 3:
       return
     sleep(random.randint(30, 60))
@@ -193,7 +193,7 @@ def getListProducts(i, category_id, category):
     thread.start()
     threads.append(thread)
     # break
-    sleep(random.randint(5, 20))
+    sleep(random.randint(40, 70))
 
   for thread in threads:
     thread.join()
@@ -228,6 +228,7 @@ def writeToFile():
         df.loc[len(df)] = str(value).split('|')
       except Exception as e:
         logger.error(e)
+        logger.error(f'VALUE RECEIVE: {value}')
     else:
       logger.info(f'Queue: Counting: {cnt}, queue-size: {queues._qsize()}')
       sleep(60)
@@ -281,7 +282,7 @@ for category in categories:
   threads.append(thread)
   thread.start()
   # break
-  sleep(random.randint(25, 35))
+  sleep(random.randint(10, 30))
 for thread in threads:
   thread.join()
 queues.put(None)
