@@ -136,17 +136,17 @@ def getDetailProduct(product, category, logger, retry=1):
   global queues
   try:
     ecommerce = 'TIKI'
-    logger.info('sending request...')
+    print('sending request...')
     product_response = requests.get(f'https://tiki.vn/api/v2/products/{product["id"]}',
                                     params=product_params, cookies=cookies, headers=headers)
     data = product_response.json()
-    logger.info('Handling info...')
+    print('Handling info...')
     infoReturn = getInfo(data)
     res = f'{ecommerce}|{category}|{infoReturn}'
     # print(jsonRes)
     queues.put(res)
-    # logging.info(jsonRes)
-    logger.info('Done...')
+    # print(jsonRes)
+    print('Done...')
   except Exception as e:
     print(e)
     if retry >= 1:
@@ -164,22 +164,22 @@ products_params = {
 }
 
 
-def getListProducts(i, category_id, category, logger):
+def getListProducts(i, category_id, category):
   global logging
 
   threads = []
   products_params['page'] = i
   products_params['category'] = category_id
-  logger.info('Request list products...')
+  print('Request list products...')
   products_response = requests.get('https://tiki.vn/api/v2/products',
                                    params=products_params, cookies=cookies, headers=headers)
   # print(products_response.json())
   products = products_response.json()['data']
   for idx, product in enumerate(products):
-    logger.info('Request product...')
-    subLogger = logging.getLogger(f'Thread {i}.{idx}')
+    print('Request product...')
+    # subLogger = logging.getLogger(f'Thread {i}.{idx}')
     thread = Thread(target=getDetailProduct, args=(
-        product, category, subLogger))
+        product, category))
     thread.start()
     threads.append(thread)
     sleep(1)
@@ -209,13 +209,16 @@ def writeToFile():
       if value == None:
         break
       cnt += 1
-      df.loc[len(df)] = str(value).split('|')
+      try:
+        df.loc[len(df)] = str(value).split('|')
+      except:
+        print(f'Error here: {value}')
     else:
-      logging.info(f'Queue: Counting: {cnt}, queue-size: {queues._qsize()}')
+      print(f'Queue: Counting: {cnt}, queue-size: {queues._qsize()}')
       sleep(2)
 
   df.to_csv('data.csv', mode='w+')
-  logging.info('Write to file success...')
+  print('Write to file success...')
 
 
 # get list products
@@ -225,7 +228,7 @@ logging.basicConfig(filename=f'./logs/log_{timeFormat}_.txt',
                     filemode='w+',
                     format='%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s',
                     datefmt='%H:%M:%S',
-                    level=logging.INFO)
+                    level=print)
 
 
 capacity = 1000000
@@ -253,9 +256,9 @@ for category in categories:
   # print(category_id, category_name)
 
   for i in range(1, (2000//LIMIT)+1):
-    logger = logging.getLogger(f'Thread {i}')
+    # logger = logging.getLogger(f'Thread {i}')
     thread = Thread(target=getListProducts, args=(
-        i, category_id, category_name, logger))
+        i, category_id, category_name))
     thread.start()
     threads.append(thread)
     sleep(20)
@@ -263,5 +266,12 @@ for category in categories:
   for thread in threads:
     thread.join()
   queues.put(None)
-  logging.info('Done...')
+  print('Done...')
   sleep(20)
+
+  '''
+  TODO:
+    - write custom logging function to handle
+    - commit file change in github action
+
+  '''
