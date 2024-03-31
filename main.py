@@ -10,8 +10,9 @@ import logging
 import coloredlogs
 from datetime import datetime
 import sys
+import random
 
-sys.tracebacklimit = 0
+sys.tracebacklimit = None
 
 # %%
 cookies = {
@@ -156,7 +157,7 @@ def getDetailProduct(product, category, logger, retry=1):
     logger.error(e)
     if retry >= 3:
       return
-    sleep(30)
+    sleep(random.randint(30, 60))
     logger.warning('Retry request detail product')
     return getDetailProduct(product, logger, retry+1)
 
@@ -192,7 +193,7 @@ def getListProducts(i, category_id, category):
     thread.start()
     threads.append(thread)
     # break
-    sleep(20)
+    sleep(random.randint(5, 30))
 
   for thread in threads:
     thread.join()
@@ -252,7 +253,7 @@ def crawlMultipleCategories(category):
     thread.start()
     threads.append(thread)
     # break
-    sleep(30)
+    sleep(random.randint(20, 30))
 
 
 # %%
@@ -280,7 +281,7 @@ for category in categories:
   threads.append(thread)
   thread.start()
   # break
-  sleep(60)
+  sleep(random.randint(25, 35))
 for thread in threads:
   thread.join()
 queues.put(None)
