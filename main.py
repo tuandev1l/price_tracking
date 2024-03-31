@@ -211,16 +211,16 @@ def getListProducts(i, category_id, category, retry=1):
       # break
       # sleep(random.randint(40, 70))
 
-    logger.info(f'Before join {threads}')
-    for thread in threads:
-      thread.join()
-    logger.info(f'After join {threads}')
+    # logger.info(f'Before join {threads}')
+    # for thread in threads:
+    #   thread.join()
+    # logger.info(f'After join {threads}')
   except:
     if retry >= 3:
       logger.error('Can not request products')
       return
     sleep(10)
-    logger.warn('Retry request products')
+    logger.warning('Retry request products')
     return getListProducts(i, category_id, category, retry+1)
 
 
@@ -307,12 +307,12 @@ for category in categories:
   threads.append(thread)
   thread.start()
   # break
-  sleep(40)
+  sleep(20)
   # sleep(random.randint(10, 20))
-logger.info(f'Before join: {threads}')
+# logger.info(f'Before join: {threads}')
 for thread in threads:
   thread.join()
-logger.info(f'After join: {threads}')
-sleep(10*60)
+# logger.info(f'After join: {threads}')
+# sleep(10*60)
 queues.put(None)
 logger.info('Done...')
