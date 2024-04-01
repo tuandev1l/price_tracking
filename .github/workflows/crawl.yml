@@ -1,4 +1,4 @@
-name: Scrape latest data
+name: Scrape LAZADA latest data
 
 on:
   push:
@@ -30,7 +30,8 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirement.txt
       - name: Crawling data
-        run: python main.py
+        # run: python main.py
+        run: python lazada/lazada.py
       - name: Commit change
         uses: EndBug/add-and-commit@v9
         with:
