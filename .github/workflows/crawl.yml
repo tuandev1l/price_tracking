@@ -31,7 +31,8 @@ jobs:
         run: pip install -r requirement.txt
       - name: Crawling data
         # run: python main.py
-        run: python lazada/lazada.py
+        working-directory: ./lazada
+        run: python lazada.py
       - name: Commit change
         uses: EndBug/add-and-commit@v9
         with:
